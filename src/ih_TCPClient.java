@@ -88,7 +88,7 @@ public class ih_TCPClient extends Thread {
         }
 
     }
-    public static int Handshake(BufferedReader in, PrintWriter out) throws NumberFormatException, IOException {
+    public static byte Handshake(BufferedReader in, PrintWriter out) throws NumberFormatException, IOException {
     	Random rand= new Random();
     	int y=rand.nextInt(20);
 	    g=Integer.parseInt(in.readLine());
@@ -114,7 +114,12 @@ public class ih_TCPClient extends Thread {
 
 	   	BigInteger sharedkey= new BigInteger("" + serverkey).modPow(new BigInteger("" + y), new BigInteger("" + n));
 		flag=true;
-	   	return sharedkey.intValue();
+		
+		byte lowByte = (byte)(sharedkey.intValue() & 0xFF);
+		
+		
+		
+	   	return lowByte;
     }
 
 }
@@ -226,32 +231,9 @@ class GetThread extends Thread {
      * Run will wait until a message is recieved, then output it to the clients console
      */
     public void run() {
-	   	 Random rand = new Random();
-	   	 int x=rand.nextInt(10);
-	       // Set up input streams for the connection
-
-		try {
-
-			
-			
-			
-			
-
-		       //while(!in.ready()) { 
-
-			//creating BigInteger Objects to tstore tehe key results
-//			String num=Math.pow(ih_TCPClient.n,x)+"";
-//		   	BigInteger modcalc=new BigInteger(num);
-//		   	BigInteger modby=new BigInteger(ih_TCPClient.n+"");
-//			modcalc=modcalc.mod(modby);
-//			ih_TCPClient.clientkey=modcalc.intValue();
-//		    //ih_TCPClient.clientkey=(int)((Math.pow(ih_TCPClient.g,x)) % ih_TCPClient.n);
-//		    ih_TCPClient.flag=true;
-//		    System.out.println("flag="+ih_TCPClient.flag);
-
 
         while (!link.isClosed()) {
-
+        	try {
 
 
                 
@@ -266,7 +248,7 @@ class GetThread extends Thread {
                 while ((currline = in .readLine()) != null) {
                     System.out.println(currline);
                 }
-        }
+                in.close();
 		}  
         catch (IOException e) {
             e.printStackTrace();
@@ -281,5 +263,6 @@ class GetThread extends Thread {
             }
 
         }
+    }
     }
 }

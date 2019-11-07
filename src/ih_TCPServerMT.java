@@ -236,6 +236,7 @@ class ClientHandler extends Thread {
             // Send a report back and close the connection
             out.println("Session Time: "+time);
             out.println("Server received " + numMessages + " messages");
+            out.flush();
             out.close();
             frdr.close();
             tofile.close();
@@ -259,7 +260,7 @@ class ClientHandler extends Thread {
         }
 
     }
-    public static int Handshake() throws NumberFormatException, IOException {
+    public static byte Handshake() throws NumberFormatException, IOException {
     	System.out.println("Clientthread running"+ih_TCPServerMT.g);
     	Random rand= new Random();
     	int x=rand.nextInt();
@@ -283,7 +284,11 @@ class ClientHandler extends Thread {
 	    
 	   	BigInteger sharedkey= new BigInteger("" + clientkey).modPow(new BigInteger("" + x), new BigInteger("" + n));
 	   			
-	   	return sharedkey.intValue();
+	   	byte lowByte = (byte)(sharedkey.intValue() & 0xFF);
+		
+		
+		
+	   	return lowByte;
     }
     
     
