@@ -12,6 +12,7 @@ public class ih_TCPClient extends Thread {
     public static volatile boolean flag=false;
 	public static int clientkey,serverkey;
 	
+	
     /**
      * Main will check for arguments passed at command line.
      * Then will try to establish a connection with a Server using those arguments.
@@ -68,7 +69,7 @@ public class ih_TCPClient extends Thread {
  	       	BufferedReader in = new BufferedReader(
 			       new InputStreamReader(link.getInputStream()));
             
-            int sharedkey=Handshake(in,out);
+            byte sharedkey=Handshake(in,out);
             
             System.out.println("shared key woop woop "+sharedkey);
             
@@ -77,9 +78,9 @@ public class ih_TCPClient extends Thread {
             
             
             //starting a send thread to manage client sending
-            SendThread send = new SendThread(ureceived, user, link,out);
+            SendThread send = new SendThread(ureceived, user, link,out,sharedkey);
             //starting a get thread to manage client recieving.
-            GetThread get = new GetThread(link,in);
+            GetThread get = new GetThread(link,in,sharedkey);
             get.start();
             send.start();
 
@@ -90,18 +91,22 @@ public class ih_TCPClient extends Thread {
     }
     public static byte Handshake(BufferedReader in, PrintWriter out) throws NumberFormatException, IOException {
     	Random rand= new Random();
-    	int y=rand.nextInt(20);
+    	int y=rand.nextInt(100)+100;
 	    g=Integer.parseInt(in.readLine());
 	   	n=Integer.parseInt(in.readLine());
-	   	System.out.println(g+" g ; n "+n);
 	   	
-
-	   	BigInteger mod = new BigInteger("" + g).modPow(new BigInteger("" + y), new BigInteger("" + n));
-	   	System.out.println(mod+" this the value");
-	   	clientkey=mod.intValue();
+	   	y=317;
+	   	//modular exponentiation
+	   	int r=g%n;
+	   	for(int i=0;i<y-1; i++)
+	   	{
+	   		r=(r*g)%n;
+	   	}
+	   	
+	   	clientkey=r;
 	    out.println(clientkey);
 	   	out.flush();
-	   	
+	   	System.out.println(clientkey+" clientkey");
 	   	
 		/*
 	   	//BigInteger modby=new BigInteger(n+"");
@@ -110,12 +115,25 @@ public class ih_TCPClient extends Thread {
 		//out.println(privkey);
     	//out.flush();
     	*/
+
+	   	
+	   	
+	   	
 	    serverkey=Integer.parseInt(in.readLine());
 
-	   	BigInteger sharedkey= new BigInteger("" + serverkey).modPow(new BigInteger("" + y), new BigInteger("" + n));
+	   	//modular exponentiation
+	   	int z=serverkey%n;
+	   	for(int i=0;i<y-1; i++)
+	   	{
+	   		z=(z*serverkey)%n;
+	   	}
+	    
+	   	int sharedkey= z;
+	   	
+	   	
 		flag=true;
-		
-		byte lowByte = (byte)(sharedkey.intValue() & 0xFF);
+    	System.out.println("g="+g+"  n="+n+"  sharedkey="+sharedkey);
+		byte lowByte = (byte)(sharedkey & 0xFF);
 		
 		
 		
@@ -133,17 +151,19 @@ class SendThread extends Thread {
     private String us;
     private Socket link;
     private PrintWriter out;
+    private byte sharedkey;
     /**
      * Constructor for sendtrhead
      * @param ureceived if user was received
      * @param us username
      * @param link the socket linked
      */
-    SendThread(boolean ureceived, String us, Socket link,PrintWriter out) {
+    SendThread(boolean ureceived, String us, Socket link,PrintWriter out,byte sharedkey) {
     	this.out=out;
         this.ureceived = ureceived;
         this.us = us;
         this.link = link;
+        this.sharedkey=sharedkey;
     }
     /**
      * Run will start a couple of writers adn connect them to the console
@@ -189,6 +209,21 @@ class SendThread extends Thread {
             	//prompting user to enter a message, then sending it to the server
                 System.out.print("Enter message:\n ");
                 message = userEntry.readLine();
+                
+                //encrypting message to send
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 out.println(user + ": " + message);
                 //delaying the thread for 200 milliseconds
                 Thread.sleep(200);
@@ -218,14 +253,15 @@ class SendThread extends Thread {
 class GetThread extends Thread {
     private Socket link;
     private BufferedReader in;
+    private byte sharedkey;
     /**
      * GetThread constructer takes only the socket that is linked to the server
      * @param link
      */
-    GetThread(Socket link,BufferedReader in) {
+    GetThread(Socket link,BufferedReader in,byte sharedkey) {
     	this.in=in;
         this.link = link;
-        
+        this.sharedkey=sharedkey;
     }
     /**
      * Run will wait until a message is recieved, then output it to the clients console

@@ -152,7 +152,7 @@ class ClientHandler extends Thread {
         
     	
     	try {
-            int sharedkey=Handshake();
+            byte sharedkey=Handshake();
             
             System.out.println("shared key woop woop "+sharedkey);
 		} catch (NumberFormatException | IOException e1) {
@@ -261,30 +261,46 @@ class ClientHandler extends Thread {
 
     }
     public static byte Handshake() throws NumberFormatException, IOException {
-    	System.out.println("Clientthread running"+ih_TCPServerMT.g);
     	Random rand= new Random();
-    	int x=rand.nextInt();
+    	int x=(int)(Math.random())+1*100;
     	out.println(g);
     	out.flush();
     	out.println(n);
     	out.flush();
-    	
+
 	   	BigInteger mod = new BigInteger("" + g).modPow(new BigInteger("" + x), new BigInteger("" + n));
-	   	System.out.println(mod+" this the value");
 	   	
 	   	clientkey=Integer.parseInt(in.readLine());
 	   	
 	   	
- 
 	   	
-		int privkey=mod.intValue();
+	   	x=143;
+	   	//modular exponentiation
+	   	int r=g%n;
+	   	for(int i=0;i<x-1; i++)
+	   	{
+	   		r=(r*g)%n;
+	   	}
+	   	
+		int privkey=r;
 		out.println(privkey);
     	out.flush();
-    	
 	    
-	   	BigInteger sharedkey= new BigInteger("" + clientkey).modPow(new BigInteger("" + x), new BigInteger("" + n));
-	   			
-	   	byte lowByte = (byte)(sharedkey.intValue() & 0xFF);
+	   	System.out.println(privkey+" privkey");
+
+    	
+	   	int z=clientkey;
+	   	for(int i=0;i<x-1; i++)
+	   	{
+	   		z=(z*clientkey)%n;
+	   	}
+	   	System.out.println(r+"     <___r   mod_____>    "+mod);
+
+    	int sharedkey=z;
+    	
+    	System.out.println("g="+g+"  n="+n+"  sharedkey="+sharedkey);
+
+	   	byte lowByte = (byte) (sharedkey & 0xFF);
 		
 		
 		
@@ -298,7 +314,7 @@ class ClientHandler extends Thread {
      */
     public static String convertToTime(long x)
     {
-    	//using integer dis=vision and modulus to return readable value
+    	//using integer division and modulus to return readable value
     	String s="";
     	long hours = (x / 1000) / (60*60);
         long minutes = (x / 1000) / 60;
