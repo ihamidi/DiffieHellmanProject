@@ -117,7 +117,7 @@ public class ih_TCPServerMT {
 class ClientHandler extends Thread {
     private Socket client;
     private static BufferedReader in ;
-    private static PrintWriter out;
+    private PrintWriter out;
     public static int g=ih_TCPServerMT.g,n=ih_TCPServerMT.n,clientkey;
     public ClientHandler(Socket s) {
 
@@ -152,7 +152,7 @@ class ClientHandler extends Thread {
         
     	
     	try {
-            byte sharedkey=Handshake();
+            byte sharedkey=Handshake(out);
             
             System.out.println("shared key woop woop "+sharedkey);
 		} catch (NumberFormatException | IOException e1) {
@@ -206,8 +206,9 @@ class ClientHandler extends Thread {
                 numMessages++;
                 //broadcast message to all active clients
                 for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
-                    if (ih_TCPServerMT.slist.get(i) != this)
-                        ih_TCPServerMT.slist.get(i).out.println("\n" + message + "\nEnter message:");
+                    if (ih_TCPServerMT.slist.get(i) != this) {
+						ih_TCPServerMT.slist.get(i).out.println("\n" + message + "\nEnter message:");
+					}
                 }
                 //printing message to file
                 synchronized(this) {
@@ -260,7 +261,7 @@ class ClientHandler extends Thread {
         }
 
     }
-    public static byte Handshake() throws NumberFormatException, IOException {
+    public static byte Handshake(PrintWriter out) throws NumberFormatException, IOException {
     	Random rand= new Random();
     	int x=(int)(Math.random())+1*100;
     	out.println(g);
@@ -274,7 +275,6 @@ class ClientHandler extends Thread {
 	   	
 	   	
 	   	
-	   	x=143;
 	   	//modular exponentiation
 	   	int r=g%n;
 	   	for(int i=0;i<x-1; i++)
@@ -306,6 +306,42 @@ class ClientHandler extends Thread {
 		
 	   	return lowByte;
     }
+    
+    
+    /**
+     * Encrypts a message using bit level encryption
+     * @param message
+     * @param b
+     * @return
+     */
+    public static String Encrypt(String message, byte b) {
+    	byte[]toEncrypt=message.getBytes();
+    	for(int i=0;i<toEncrypt.length;i++)
+    	{
+    		toEncrypt[i]=(byte) (toEncrypt[i]^b);
+    	}
+    	message=new String(toEncrypt);
+		return message;
+    	
+    }
+    /**
+     * Decrypts a message using bit level decryption
+     * @param message
+     * @param b
+     * @return
+     */
+    public static String Decrypt(String message, byte b) {
+    	byte[]toEncrypt=message.getBytes();
+    	for(int i=0;i<toEncrypt.length;i++)
+    	{
+    		toEncrypt[i]=(byte) (toEncrypt[i]^b);
+    	}
+    	message=new String(toEncrypt);
+		return message;
+    	
+    }
+    
+    
     
     
     /**

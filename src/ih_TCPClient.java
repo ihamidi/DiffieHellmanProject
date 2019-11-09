@@ -95,7 +95,6 @@ public class ih_TCPClient extends Thread {
 	    g=Integer.parseInt(in.readLine());
 	   	n=Integer.parseInt(in.readLine());
 	   	
-	   	y=317;
 	   	//modular exponentiation
 	   	int r=g%n;
 	   	for(int i=0;i<y-1; i++)
@@ -209,22 +208,24 @@ class SendThread extends Thread {
             	//prompting user to enter a message, then sending it to the server
                 System.out.print("Enter message:\n ");
                 message = userEntry.readLine();
+
+                
+                
+                
+                
                 
                 //encrypting message to send
+                //using hardcoded byte
+                out.println(Encrypt(user + ": " + message,(byte) 10));
+                //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
+              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
+              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
+              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
                 
                 
                 
                 
                 
-                
-                
-                
-                
-                
-                
-                
-                
-                out.println(user + ": " + message);
                 //delaying the thread for 200 milliseconds
                 Thread.sleep(200);
 
@@ -240,6 +241,22 @@ class SendThread extends Thread {
         }
 
 
+    }
+    /**
+     * Encrypts a message using bit level encryption
+     * @param message
+     * @param b
+     * @return
+     */
+    public static String Encrypt(String message, byte b) {
+    	byte[]toEncrypt=message.getBytes();
+    	for(int i=0;i<toEncrypt.length;i++)
+    	{
+    		toEncrypt[i]=(byte) (toEncrypt[i]^b);
+    	}
+    	message=new String(toEncrypt);
+		return message;
+    	
     }
 
 
@@ -285,10 +302,10 @@ class GetThread extends Thread {
                     System.out.println(currline);
                 }
                 in.close();
-		}  
-        catch (IOException e) {
-            e.printStackTrace();
-        } finally {
+			}  
+	        catch (IOException e) {
+	            e.printStackTrace();
+	        } finally {
         	//closing the connection.
             try {
                 System.out.println("\n!!!!! Closing connection... !!!!!");
@@ -298,7 +315,24 @@ class GetThread extends Thread {
                 System.exit(1);
             }
 
+	        }
         }
+    }   
+    /**
+     * Decrypts a message using bit level decryption
+     * @param message
+     * @param b
+     * @return
+     */
+    public static String Decrypt(String message, byte b) {
+    	byte[]toEncrypt=message.getBytes();
+    	for(int i=0;i<toEncrypt.length;i++)
+    	{
+    		toEncrypt[i]=(byte) (toEncrypt[i]^b);
+    	}
+    	message=new String(toEncrypt);
+		return message;
+    	
     }
-    }
+    
 }
