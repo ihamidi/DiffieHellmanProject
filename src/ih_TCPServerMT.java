@@ -151,16 +151,6 @@ class ClientHandler extends Thread {
     public void run() {
         
     	
-    	try {
-            byte sharedkey=Handshake(out);
-            
-            System.out.println("shared key woop woop "+sharedkey);
-		} catch (NumberFormatException | IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-    	
-    	
     	
     	
     	
@@ -170,6 +160,14 @@ class ClientHandler extends Thread {
         //starting timer for session time
         long starttime = System.currentTimeMillis();
         try {
+            byte bytepad=Handshake(out);
+            
+            System.out.println("bytepad is "+bytepad);
+        	
+        	
+        	
+        	
+        	
             Scanner frdr= new Scanner(ih_TCPServerMT.file);
             String currline = "";
 
@@ -201,8 +199,8 @@ class ClientHandler extends Thread {
             
 
             //printing the message to everyone
-            while (!message.substring(message.indexOf(":") + 2).equals("DONE")) {
-                System.out.println(message);
+            while (!Decrypt(message, bytepad).substring(message.indexOf(":") + 2).equals("DONE")) {
+                System.out.println(Decrypt(message,bytepad));
                 numMessages++;
                 //broadcast message to all active clients
                 for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
@@ -212,7 +210,7 @@ class ClientHandler extends Thread {
                 }
                 //printing message to file
                 synchronized(this) {
-                    tofile.println(message);
+                    tofile.println(Decrypt(message,(byte)10));
                     tofile.flush();
                 }
                 message = in .readLine();

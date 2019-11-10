@@ -150,19 +150,19 @@ class SendThread extends Thread {
     private String us;
     private Socket link;
     private PrintWriter out;
-    private byte sharedkey;
+    private byte bytepad;
     /**
      * Constructor for sendtrhead
      * @param ureceived if user was received
      * @param us username
      * @param link the socket linked
      */
-    SendThread(boolean ureceived, String us, Socket link,PrintWriter out,byte sharedkey) {
+    SendThread(boolean ureceived, String us, Socket link,PrintWriter out,byte bytepad) {
     	this.out=out;
         this.ureceived = ureceived;
         this.us = us;
         this.link = link;
-        this.sharedkey=sharedkey;
+        this.bytepad=bytepad;
     }
     /**
      * Run will start a couple of writers adn connect them to the console
@@ -216,7 +216,7 @@ class SendThread extends Thread {
                 
                 //encrypting message to send
                 //using hardcoded byte
-                out.println(Encrypt(user + ": " + message,(byte) 10));
+                out.println(Encrypt(user + ": " + message,bytepad));
                 //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
               //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
               //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
