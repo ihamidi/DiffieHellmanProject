@@ -180,7 +180,9 @@ class ClientHandler extends Thread {
             while(frdr.hasNextLine()){
                 currline += frdr.nextLine()+"\n";
             }
-            out.println(currline+ "\nEnter message:");
+            //removing duplicate message problem
+            if(currline.length()>=1)
+            	out.println(Encrypt(currline+ "\nEnter message:",bytepad));
         	//broadcasting arrival
             for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
                 if (ih_TCPServerMT.slist.get(i) != this)
@@ -199,7 +201,7 @@ class ClientHandler extends Thread {
             
 
             //printing the message to everyone
-            while (!Decrypt(message, bytepad).substring(message.indexOf(":") + 2).equals("DONE")) {
+            while (!Decrypt(message, bytepad).substring(Decrypt(message, bytepad).indexOf(":") + 2).equals("DONE")) {
                 System.out.println(Decrypt(message,bytepad));
                 numMessages++;
                 //broadcast message to all active clients
@@ -233,9 +235,8 @@ class ClientHandler extends Thread {
             String time=convertToTime(elapsed);
 
             // Send a report back and close the connection
-            out.println("Session Time: "+time);
-            out.println("Server received " + numMessages + " messages");
-            out.flush();
+            out.println(Encrypt("Session Time: "+time,bytepad));
+            out.println(Encrypt("Server received " + numMessages + " messages",bytepad));
             out.close();
             frdr.close();
             tofile.close();
@@ -243,12 +244,12 @@ class ClientHandler extends Thread {
             ih_TCPServerMT.slist.remove(this);
             //checking to see if anyone is connected, otherwise delete file
             if (ih_TCPServerMT.slist.size() == 0)
-            	ih_TCPServerMT.file.delete();
+            	System.out.println(ih_TCPServerMT.file.delete());
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
-
+            	
                 System.out.println("!!!!! Closing connection... !!!!!");
                 System.out.println();
                 client.close();

@@ -270,15 +270,15 @@ class SendThread extends Thread {
 class GetThread extends Thread {
     private Socket link;
     private BufferedReader in;
-    private byte sharedkey;
+    private byte bytepad;
     /**
      * GetThread constructer takes only the socket that is linked to the server
      * @param link
      */
-    GetThread(Socket link,BufferedReader in,byte sharedkey) {
+    GetThread(Socket link,BufferedReader in,byte bytepad) {
     	this.in=in;
         this.link = link;
-        this.sharedkey=sharedkey;
+        this.bytepad=bytepad;
     }
     /**
      * Run will wait until a message is recieved, then output it to the clients console
@@ -295,13 +295,13 @@ class GetThread extends Thread {
                 String currline;
 
                 // Receive the final report
-                response = in.readLine();
+                response = Decrypt(in.readLine(),bytepad);
                 System.out.println(response);
                 //reading in the final report
                 while ((currline = in .readLine()) != null) {
-                    System.out.println(currline);
+                    System.out.println(Decrypt(currline,bytepad));
                 }
-                in.close();
+                
 			}  
 	        catch (IOException e) {
 	            e.printStackTrace();
@@ -316,7 +316,14 @@ class GetThread extends Thread {
             }
 
 	        }
+        	
         }
+        try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }   
     /**
      * Decrypts a message using bit level decryption
