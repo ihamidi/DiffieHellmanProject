@@ -72,7 +72,7 @@ public class ih_TCPClient extends Thread {
             
             
             //starting a send thread to manage client sending
-            SendThread send = new SendThread(ureceived, user, out,sharedkey);
+            SendThread send = new SendThread(ureceived, user, out,sharedkey,link);
             //starting a get thread to manage client recieving.
             GetThread get = new GetThread(link,in,sharedkey);
             get.start();
@@ -84,8 +84,7 @@ public class ih_TCPClient extends Thread {
 
     }
     public static byte Handshake(BufferedReader in, PrintWriter out) throws NumberFormatException, IOException {
-    	Random rand= new Random();
-    	int y=rand.nextInt(100)+100;
+    	int y=(int)(Math.random())+1*100;
 	    g=Integer.parseInt(in.readLine());
 	   	n=Integer.parseInt(in.readLine());
 	   	
@@ -136,17 +135,20 @@ class SendThread extends Thread {
     private String us;
     private PrintWriter out;
     private byte bytepad;
+    private Socket link;
+
     /**
      * Constructor for sendtrhead
      * @param ureceived if user was received
      * @param us username
      * @param link the socket linked
      */
-    SendThread(boolean ureceived, String us,PrintWriter out,byte bytepad) {
+    SendThread(boolean ureceived, String us,PrintWriter out,byte bytepad,Socket link) {
     	this.out=out;
         this.ureceived = ureceived;
         this.us = us;
         this.bytepad=bytepad;
+        this.link=link;
     }
     /**
      * Run will start a couple of writers adn connect them to the console
@@ -174,7 +176,7 @@ class SendThread extends Thread {
                 user = us;
             }
             //sending username
-            out.println(user);
+            out.println(Encrypt(user,bytepad));
         	out.flush();
 
             
@@ -189,7 +191,7 @@ class SendThread extends Thread {
                 
                 
                 
-                
+  
                 //encrypting message to send
                 out.println(Encrypt(user + ": " + message,bytepad));
         
@@ -202,7 +204,7 @@ class SendThread extends Thread {
 
             } while (!message.equals("DONE"));
             out.println(user + " has left the room");
-            out.close();
+//            out.close();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -259,7 +261,9 @@ class GetThread extends Thread {
         while (!link.isClosed()) {
         	try {
 
-
+        		 // Set up input streams for the connection
+                BufferedReader in = new BufferedReader(
+                    new InputStreamReader(link.getInputStream()));
                 
                 
                 String response;
@@ -289,6 +293,7 @@ class GetThread extends Thread {
 	        }
         	
         }
+        
         try {
 			in.close();
 		} catch (IOException e) {

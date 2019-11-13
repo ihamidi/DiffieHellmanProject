@@ -12,8 +12,8 @@ import java.util.Scanner;
 
 public class ih_TCPServerMT {
     private static ServerSocket servSock;
-    public static ArrayList < ClientHandler > slist = new ArrayList < ClientHandler > ();
-    public static ArrayList <Byte> bytelist = new ArrayList <Byte> ();
+    public static volatile ArrayList < ClientHandler > slist = new ArrayList < ClientHandler > ();
+    public static volatile ArrayList <Byte> bytelist = new ArrayList <Byte> ();
     public static File file = new File("ih_chat.txt");
     public static int g=33,n=128;
     
@@ -121,7 +121,7 @@ public class ih_TCPServerMT {
 
 class ClientHandler extends Thread {
     private Socket client;
-    private static BufferedReader in ;
+    private BufferedReader in ;
     private PrintWriter out;
     public static int g=ih_TCPServerMT.g,n=ih_TCPServerMT.n,clientkey;
     public ClientHandler(Socket s) {
@@ -165,7 +165,7 @@ class ClientHandler extends Thread {
         //starting timer for session time
         long starttime = System.currentTimeMillis();
         try {
-            byte bytepad=Handshake(out);
+            byte bytepad=Handshake(out,in);
             ih_TCPServerMT.bytelist.add(bytepad);        	
         	
         	
@@ -175,7 +175,7 @@ class ClientHandler extends Thread {
             PrintWriter tofile = new PrintWriter(new FileWriter((ih_TCPServerMT.file.getName()), true));
           
             //using message to get the username
-        	String user=in.readLine();
+        	String user=Decrypt(in.readLine(),bytepad);
         	
             //printing out the contents of the final
             while(frdr.hasNextLine()){
@@ -199,14 +199,14 @@ class ClientHandler extends Thread {
         	tofile.println(user + " has joined the room.");
         	
             //read in the necxt sent message
-            String message = Decrypt(in.readLine(), bytepad);            
+            String message = Decrypt(in.readLine(),bytepad);            
             
 
             //printing the message to everyone
             /**
              * ERROR HEEEEEEEEEERE
              */
-            while (!message.substring(message.indexOf(":") + 2).equals("DONE")) {
+            while (!message.substring(message.indexOf(":") + 2).equals("DONE")&&!client.isClosed()) {
 //                message=Decrypt(message,bytepad);
             	System.out.println(message);
                 numMessages++;
@@ -271,7 +271,7 @@ class ClientHandler extends Thread {
         }
 
     }
-    public static byte Handshake(PrintWriter out) throws NumberFormatException, IOException {
+    public static byte Handshake(PrintWriter out,BufferedReader in) throws NumberFormatException, IOException {
     	int x=(int)(Math.random())+1*100;
     	out.println(g);
     	out.flush();
