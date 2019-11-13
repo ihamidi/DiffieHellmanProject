@@ -1,4 +1,5 @@
 // Multi-threaded Server program
+//Server implements diffie hellman protocol
 // File name: ih_TCPServerMT.java
 // Programmer: Izhak Hamidi E01533340
 
@@ -12,6 +13,7 @@ import java.util.Scanner;
 public class ih_TCPServerMT {
     private static ServerSocket servSock;
     public static ArrayList < ClientHandler > slist = new ArrayList < ClientHandler > ();
+    public static ArrayList <Byte> bytelist = new ArrayList <Byte> ();
     public static File file = new File("ih_chat.txt");
     public static int g=33,n=128;
     
@@ -95,6 +97,7 @@ public class ih_TCPServerMT {
             ClientHandler handler = new ClientHandler(link);
             // adding client handler  to an arraylist
             slist.add(handler);
+            
 
             //checking to ee if slist has one element, meaning a new file must be created
             if (!file.exists())
@@ -102,8 +105,10 @@ public class ih_TCPServerMT {
 
             //going through the list of clients and removing disconnected clients
             for (int i = 0; i < slist.size(); i++)
-                if (slist.get(i).isClientClosed())
+                if (slist.get(i).isClientClosed()) {
                     slist.remove(i);
+                    bytelist.remove(i);
+                }
 
             // start serving this connection
             handler.start();
@@ -127,8 +132,8 @@ class ClientHandler extends Thread {
         try {
 
             // Set up input and output streams for socket
-            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            out = new PrintWriter(client.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream())));
+            out = new PrintWriter(new DataOutputStream(client.getOutputStream()), true);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -161,11 +166,7 @@ class ClientHandler extends Thread {
         long starttime = System.currentTimeMillis();
         try {
             byte bytepad=Handshake(out);
-            
-            System.out.println("bytepad is "+bytepad);
-        	
-        	
-        	
+            ih_TCPServerMT.bytelist.add(bytepad);        	
         	
         	
             Scanner frdr= new Scanner(ih_TCPServerMT.file);
@@ -186,7 +187,8 @@ class ClientHandler extends Thread {
         	//broadcasting arrival
             for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
                 if (ih_TCPServerMT.slist.get(i) != this)
-                    ih_TCPServerMT.slist.get(i).out.println("\n" + user + " has joined the room.\nEnter message:");
+                    ih_TCPServerMT.slist.get(i).out.println(Encrypt("\n" + user + " has joined the room.\nEnter message:",ih_TCPServerMT.bytelist.get(i)));
+                System.out.println(ih_TCPServerMT.bytelist.get(i)+" byte");
             }
         	
             //printing arrival to console
@@ -197,31 +199,35 @@ class ClientHandler extends Thread {
         	tofile.println(user + " has joined the room.");
         	
             //read in the necxt sent message
-            String message = in .readLine();            
+            String message = Decrypt(in.readLine(), bytepad);            
             
 
             //printing the message to everyone
-            while (!Decrypt(message, bytepad).substring(Decrypt(message, bytepad).indexOf(":") + 2).equals("DONE")) {
-                System.out.println(Decrypt(message,bytepad));
+            /**
+             * ERROR HEEEEEEEEEERE
+             */
+            while (!message.substring(message.indexOf(":") + 2).equals("DONE")) {
+//                message=Decrypt(message,bytepad);
+            	System.out.println(message);
                 numMessages++;
                 //broadcast message to all active clients
                 for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
                     if (ih_TCPServerMT.slist.get(i) != this) {
-						ih_TCPServerMT.slist.get(i).out.println("\n" + message + "\nEnter message:");
+						ih_TCPServerMT.slist.get(i).out.println(Encrypt("\n" + message + "\nEnter message:",ih_TCPServerMT.bytelist.get(i)));
 					}
                 }
                 //printing message to file
                 synchronized(this) {
-                    tofile.println(Decrypt(message,(byte)10));
+                    tofile.println(message);
                     tofile.flush();
                 }
-                message = in .readLine();
+                message = Decrypt(in.readLine(),bytepad);
             }
             
             //broadcasting departure
             for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
                 if (ih_TCPServerMT.slist.get(i) != this)
-                    ih_TCPServerMT.slist.get(i).out.println("\n" + user+ " has left the room."+"\nEnter message:");
+                    ih_TCPServerMT.slist.get(i).out.println(Encrypt("\n" + user+ " has left the room."+"\nEnter message:",ih_TCPServerMT.bytelist.get(i)));
             }
             
             //printing departure to console
@@ -237,14 +243,19 @@ class ClientHandler extends Thread {
             // Send a report back and close the connection
             out.println(Encrypt("Session Time: "+time,bytepad));
             out.println(Encrypt("Server received " + numMessages + " messages",bytepad));
-            out.close();
-            frdr.close();
-            tofile.close();
+//            out.close();
+//            frdr.close();
+//            tofile.close();
+//            in.close();
             //removing from the list when disconnecting
-            ih_TCPServerMT.slist.remove(this);
+            int indextoremove=ih_TCPServerMT.slist.indexOf(this);
+            System.out.println("removed "+ih_TCPServerMT.slist.remove(this));
+            System.out.println("removed "+ih_TCPServerMT.bytelist.remove(indextoremove));
+            
+            
             //checking to see if anyone is connected, otherwise delete file
             if (ih_TCPServerMT.slist.size() == 0)
-            	System.out.println(ih_TCPServerMT.file.delete());
+            	ih_TCPServerMT.file.delete();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -261,15 +272,12 @@ class ClientHandler extends Thread {
 
     }
     public static byte Handshake(PrintWriter out) throws NumberFormatException, IOException {
-    	Random rand= new Random();
     	int x=(int)(Math.random())+1*100;
     	out.println(g);
     	out.flush();
     	out.println(n);
     	out.flush();
 
-	   	BigInteger mod = new BigInteger("" + g).modPow(new BigInteger("" + x), new BigInteger("" + n));
-	   	
 	   	clientkey=Integer.parseInt(in.readLine());
 	   	
 	   	
@@ -281,11 +289,10 @@ class ClientHandler extends Thread {
 	   		r=(r*g)%n;
 	   	}
 	   	
-		int privkey=r;
-		out.println(privkey);
+		int serverkey=r;
+		out.println(serverkey);
     	out.flush();
 	    
-	   	System.out.println(privkey+" privkey");
 
     	
 	   	int z=clientkey;
@@ -293,11 +300,9 @@ class ClientHandler extends Thread {
 	   	{
 	   		z=(z*clientkey)%n;
 	   	}
-	   	System.out.println(r+"     <___r   mod_____>    "+mod);
-
-    	int sharedkey=z;
+    	byte sharedkey=(byte) z;
     	
-    	System.out.println("g="+g+"  n="+n+"  sharedkey="+sharedkey);
+    	System.out.println("g="+g+"  n="+n+" serverkey="+serverkey+" sharedkey="+sharedkey);
 
 	   	byte lowByte = (byte) (sharedkey & 0xFF);
 		

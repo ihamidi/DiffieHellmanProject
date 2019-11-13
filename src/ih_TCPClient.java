@@ -59,26 +59,20 @@ public class ih_TCPClient extends Thread {
             // Establish a connection to the server
             link = new Socket(host, portnum);
             
-            //diffieHellman
-
-            //g=Integer.parseInt(in.readLine());
-           // n=Integer.parseInt(in.readLine());
             
             PrintWriter out = new PrintWriter(
-                    link.getOutputStream(), true);
+                    new DataOutputStream(link.getOutputStream()), true);
  	       	BufferedReader in = new BufferedReader(
-			       new InputStreamReader(link.getInputStream()));
+			       new InputStreamReader(new DataInputStream(link.getInputStream())));
             
             byte sharedkey=Handshake(in,out);
-            
-            System.out.println("shared key woop woop "+sharedkey);
-            
+                       
             
             while(!flag) {}
             
             
             //starting a send thread to manage client sending
-            SendThread send = new SendThread(ureceived, user, link,out,sharedkey);
+            SendThread send = new SendThread(ureceived, user, out,sharedkey);
             //starting a get thread to manage client recieving.
             GetThread get = new GetThread(link,in,sharedkey);
             get.start();
@@ -105,15 +99,7 @@ public class ih_TCPClient extends Thread {
 	   	clientkey=r;
 	    out.println(clientkey);
 	   	out.flush();
-	   	System.out.println(clientkey+" clientkey");
 	   	
-		/*
-	   	//BigInteger modby=new BigInteger(n+"");
-		//modcalc=modcalc.mod(modby);
-		//int privkey=modcalc.intValue();
-		//out.println(privkey);
-    	//out.flush();
-    	*/
 
 	   	
 	   	
@@ -127,11 +113,11 @@ public class ih_TCPClient extends Thread {
 	   		z=(z*serverkey)%n;
 	   	}
 	    
-	   	int sharedkey= z;
+	   	byte sharedkey= (byte) z;
 	   	
 	   	
 		flag=true;
-    	System.out.println("g="+g+"  n="+n+"  sharedkey="+sharedkey);
+    	System.out.println("g="+g+"  n="+n+" clientkey="+clientkey+" sharedkey="+sharedkey);
 		byte lowByte = (byte)(sharedkey & 0xFF);
 		
 		
@@ -148,7 +134,6 @@ public class ih_TCPClient extends Thread {
 class SendThread extends Thread {
     private boolean ureceived;
     private String us;
-    private Socket link;
     private PrintWriter out;
     private byte bytepad;
     /**
@@ -157,11 +142,10 @@ class SendThread extends Thread {
      * @param us username
      * @param link the socket linked
      */
-    SendThread(boolean ureceived, String us, Socket link,PrintWriter out,byte bytepad) {
+    SendThread(boolean ureceived, String us,PrintWriter out,byte bytepad) {
     	this.out=out;
         this.ureceived = ureceived;
         this.us = us;
-        this.link = link;
         this.bytepad=bytepad;
     }
     /**
@@ -175,18 +159,10 @@ class SendThread extends Thread {
             String user = "";
             //starting a printwriter to send things to the server
             
-            BufferedReader userEntry = new BufferedReader(new InputStreamReader(System.in));
+            BufferedReader userEntry = new BufferedReader(new InputStreamReader( new DataInputStream(System.in)));
             String message;
             
-//            while(!ih_TCPClient.flag){}
-//            System.out.println("key="+ih_TCPClient.clientkey);
-//            System.out.println("meaninggul message");
-//
-//
-//            out.println(ih_TCPClient.clientkey);
-//        	out.flush();
-//        	
-//            ih_TCPClient.flag=false;
+
 
             //bufferedreader to read in user input
             //Prompting user for username
@@ -215,13 +191,8 @@ class SendThread extends Thread {
                 
                 
                 //encrypting message to send
-                //using hardcoded byte
                 out.println(Encrypt(user + ": " + message,bytepad));
-                //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
-              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
-              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
-              //REMEMBER TO CHANGE AND ADD DECRPTION ON  SEVRER
-                
+        
                 
                 
                 
