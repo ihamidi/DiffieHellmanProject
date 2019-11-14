@@ -12,9 +12,11 @@ import java.util.Scanner;
 
 public class ih_TCPServerMT {
     private static ServerSocket servSock;
+    //Arraylist to store the clients and the each clients one byte pad
     public static volatile ArrayList < ClientHandler > slist = new ArrayList < ClientHandler > ();
     public static volatile ArrayList <Byte> bytelist = new ArrayList <Byte> ();
     public static File file = new File("ih_chat.txt");
+    //hardcoded g and n
     public static int g=33,n=128;
     
     
@@ -62,9 +64,9 @@ public class ih_TCPServerMT {
             System.exit(1);
         }
 
-        //creating a client for the first instance
 
         do {
+        	//deleting file if no one is connected
             if (slist.isEmpty()) {
                 file.delete();
             }
@@ -123,6 +125,7 @@ class ClientHandler extends Thread {
     private Socket client;
     private BufferedReader in ;
     private PrintWriter out;
+    //g and n to compute the encryption one byte pad
     public static int g=ih_TCPServerMT.g,n=ih_TCPServerMT.n,clientkey;
     public ClientHandler(Socket s) {
 
@@ -165,10 +168,12 @@ class ClientHandler extends Thread {
         //starting timer for session time
         long starttime = System.currentTimeMillis();
         try {
+        	//byte pad is the one byte pad computed
             byte bytepad=Handshake(out,in);
+            //adding corresponding one byte pad to the arraylist
             ih_TCPServerMT.bytelist.add(bytepad);        	
         	
-        	
+        	//
             Scanner frdr= new Scanner(ih_TCPServerMT.file);
             String currline = "";
 
@@ -188,7 +193,6 @@ class ClientHandler extends Thread {
             for (int i = 0; i < ih_TCPServerMT.slist.size(); i++) {
                 if (ih_TCPServerMT.slist.get(i) != this)
                     ih_TCPServerMT.slist.get(i).out.println(Encrypt("\n" + user + " has joined the room.\nEnter message:",ih_TCPServerMT.bytelist.get(i)));
-                System.out.println(ih_TCPServerMT.bytelist.get(i)+" byte");
             }
         	
             //printing arrival to console
@@ -221,6 +225,7 @@ class ClientHandler extends Thread {
                     tofile.println(message);
                     tofile.flush();
                 }
+                //reading in the next message
                 message = Decrypt(in.readLine(),bytepad);
             }
             
@@ -243,14 +248,15 @@ class ClientHandler extends Thread {
             // Send a report back and close the connection
             out.println(Encrypt("Session Time: "+time,bytepad));
             out.println(Encrypt("Server received " + numMessages + " messages",bytepad));
-//            out.close();
-//            frdr.close();
-//            tofile.close();
-//            in.close();
+            //closing all streams
+            out.close();
+            frdr.close();
+            tofile.close();
+            in.close();
             //removing from the list when disconnecting
             int indextoremove=ih_TCPServerMT.slist.indexOf(this);
-            System.out.println("removed "+ih_TCPServerMT.slist.remove(this));
-            System.out.println("removed "+ih_TCPServerMT.bytelist.remove(indextoremove));
+            ih_TCPServerMT.slist.remove(this);
+            ih_TCPServerMT.bytelist.remove(indextoremove);
             
             
             //checking to see if anyone is connected, otherwise delete file
@@ -271,35 +277,48 @@ class ClientHandler extends Thread {
         }
 
     }
+    /**
+     * Handshake performs Diffie Hellman with the client
+     * @param out Printwriter
+     * @param in BufferedReader
+     * @return the one byte pad to be used
+     * @throws NumberFormatException
+     * @throws IOException
+     */
     public static byte Handshake(PrintWriter out,BufferedReader in) throws NumberFormatException, IOException {
+    	
+    	//choosing a value from 100-200 for the random ky
     	int x=(int)(Math.random())+1*100;
     	out.println(g);
     	out.flush();
     	out.println(n);
     	out.flush();
-
+    	//reading in the client key
 	   	clientkey=Integer.parseInt(in.readLine());
 	   	
 	   	
 	   	
-	   	//modular exponentiation
+	   	//modular exponentiation to compute server key
 	   	int r=g%n;
 	   	for(int i=0;i<x-1; i++)
 	   	{
 	   		r=(r*g)%n;
 	   	}
 	   	
+	   	
+	 
 		int serverkey=r;
 		out.println(serverkey);
     	out.flush();
 	    
 
-    	
+    	//calculating shared key
 	   	int z=clientkey;
 	   	for(int i=0;i<x-1; i++)
 	   	{
 	   		z=(z*clientkey)%n;
 	   	}
+	   	
     	byte sharedkey=(byte) z;
     	
     	System.out.println("g="+g+"  n="+n+" serverkey="+serverkey+" sharedkey="+sharedkey);
